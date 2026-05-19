@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<title>RFID Scanner Test</title>
+<style>
+  body { font-family: Arial; max-width: 600px; margin: 40px auto; padding: 20px; background: #f5f5f5; }
+  h2 { color: #333; }
+  #status { padding: 15px; border-radius: 8px; font-size: 18px; margin: 20px 0; text-align: center; background: #fff3cd; color: #856404; }
+  #status.success { background: #d1e7dd; color: #0a3622; }
+  #result { background: white; border-radius: 8px; padding: 20px; margin: 10px 0; box-shadow: 0 2px 6px rgba(0,0,0,0.1); display: none; }
+  #epc-value { font-size: 28px; font-weight: bold; color: #0d6efd; word-break: break-all; }
+  #log { background: white; border-radius: 8px; padding: 15px; max-height: 250px; overflow-y: auto; }
+  .log-item { padding: 8px; border-bottom: 1px solid #eee; font-size: 14px; }
+  .log-item span { color: #888; font-size: 12px; }
+  button { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+  #clear-btn { background: #dc3545; color: white; }
+</style>
+</head>
+<body>
+
+<h2>📡 RFID Scanner Test</h2>
+
+<div id="status">⏳ Skanerlashni kuting...</div>
+
+<div id="result">
+  <p style="margin:0;color:#888;font-size:13px">Oxirgi skan:</p>
+  <div id="epc-value">—</div>
+  <p id="scan-time" style="color:#888;font-size:13px;margin:5px 0 0"></p>
+</div>
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin:20px 0 8px">
+  <strong>Tarix:</strong>
+  <button id="clear-btn" onclick="clearLog()">Tozalash</button>
+</div>
+<div id="log"><p style="color:#aaa;text-align:center">Hali skan yo'q</p></div>
+
+<input id="hidden-input" style="position:fixed;opacity:0;top:0;left:0" autofocus>
+
+<script>
+  const input = document.getElementById('hidden-input');
+  const status = document.getElementById('status');
+  const result = document.getElementById('result');
+  const epcValue = document.getElementById('epc-value');
+  const scanTime = document.getElementById('scan-time');
+  const log = document.getElementById('log');
+
+  let buffer = '';
+  let timer = null;
+
+  // Focus har doim input da tursin
+  document.addEventListener('click', () => input.focus());
+  document.addEventListener('keydown', () => input.focus());
+
+  input.addEventListener('input', (e) => {
+    buffer += e.data || '';
+    clearTimeout(timer);
+
+    // Scanner tez yozadi — 100ms dan keyin tugadi deb hisoblaymiz
+    timer = setTimeout(() => {
+      if (buffer.trim()) {
+        onScan(buffer.trim());
+        buffer = '';
+        input.value = '';
+      }
+    }, 100);
+  });
+
+  // Enter bilan ham ishlaydi
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      clearTimeout(timer);
+      if (buffer.trim()) {
+        onScan(buffer.trim());
+        buffer = '';
+        input.value = '';
+      }
+    }
+  });
+
+  function onScan(epc) {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('uz-UZ');
+
+    // Status
+    status.textContent = '✅ Skan muvaffaqiyatli!';
+    status.className = 'success';
+
+    // Natija
+    result.style.display = 'block';
+    epcValue.textContent = epc;
+    scanTime.textContent = '🕐 ' + timeStr;
+
+    // Log ga qo'shish
+    const isEmpty = log.querySelector('p');
+    if (isEmpty) log.innerHTML = '';
+
+    const item = document.createElement('div');
+    item.className = 'log-item';
+    item.innerHTML = `<b>${epc}</b> <span>— ${timeStr}</span>`;
+    log.prepend(item);
+
+    // 2 soniyadan keyin status qaytadi
+    setTimeout(() => {
+      status.textContent = '⏳ Skanerlashni kuting...';
+      status.className = '';
+    }, 2000);
+  }
+
+  function clearLog() {
+    log.innerHTML = '<p style="color:#aaa;text-align:center">Hali skan yo\'q</p>';
+    result.style.display = 'none';
+    epcValue.textContent = '—';
+  }
+</script>
+</body>
+</html>
